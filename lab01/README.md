@@ -177,7 +177,6 @@ class FlightSimulatorApp:
 
         self.canvas.draw()
         self.root.after(len(xs) * 30 + 100, on_finish)
--
     def update_table(self):
         self.result_text.delete(1.0, tk.END)
 
@@ -195,8 +194,12 @@ class FlightSimulatorApp:
             )
 
     def clear(self):
-        if self.animation:
-            self.animation.event_source.stop()
+        if self.animation is not None:
+            try:
+                if self.animation.event_source is not None:
+                    self.animation.event_source.stop()
+            except AttributeError:
+                pass
             self.animation = None
 
         self.ax.clear()
@@ -241,6 +244,7 @@ if __name__ == "__main__":
 Реализовано приложения для моделирования полёта тела в атмосфере с изменяемым шагом моделирования. Благодаря этому сделаны выводы:
 1. Чем выше шаг модели, тем больше погрешность.
 2. При уменьшении шага, проиходит все три величины стабилизируются.
+
 
 
 
