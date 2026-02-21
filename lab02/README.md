@@ -10,15 +10,12 @@
 <summary>Код Программы</summary>
  
   ```
-  import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np
 import time
-from tkinter import Tk, Label, Button, Frame
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 def solve_heat_equation(dx, dt, total_time=2.0):
-
+    # ПАРАМЕТРЫ ДЛЯ СООТВЕТСТВИЯ ЭТАЛОНУ
     L = 1.0  # Длина пластины
     rho_c = 1.2e5  # Скорректированная теплоемкость для прогрева
     lam = 500.0  # Теплопроводность
@@ -33,8 +30,7 @@ def solve_heat_equation(dx, dt, total_time=2.0):
     T_left, T_right = 100.0, 100.0
     T[0], T[-1] = T_left, T_right
 
-    # Коэффициенты матрицы (согласно мат. модели на скринах)
-    # A_i = lam/h^2, C_i = lam/h^2, B_i = 2*lam/h^2 + rho*c/tau
+    # Коэффициенты матрицы 
     A_i = lam / (dx ** 2)
     C_i = lam / (dx ** 2)
     B_i = (2 * lam / (dx ** 2)) + (rho_c / dt)
@@ -43,7 +39,7 @@ def solve_heat_equation(dx, dt, total_time=2.0):
         alpha = np.zeros(N)
         beta = np.zeros(N)
 
-        # Прямая прогонка (формулы из мат. модели)
+        # Прямая прогонка
         beta[1] = T_left
         for i in range(1, N - 1):
             F_i = -(rho_c / dt) * T[i]
@@ -61,9 +57,7 @@ def solve_heat_equation(dx, dt, total_time=2.0):
         T = T_new
 
     end_calc = time.time()
-    calc_time = end_calc - start_calc
-
-    return np.linspace(0, L, N), T, T[N // 2], calc_time
+    return T[N // 2], (end_calc - start_calc)
 
 
 # --- ПОДГОТОВКА ДАННЫХ ---
@@ -71,63 +65,34 @@ steps_vals = [0.1, 0.01, 0.001, 0.0001]
 results_temp = {}
 results_time = {}
 
-print("Выполняется расчет... Пожалуйста, подождите.")
+print("Начинаю расчеты. Это займет несколько минут из-за шага 0.0001...")
 
 for dt in steps_vals:
     temp_row = []
     time_row = []
     for dx in steps_vals:
-        # Для dx=0.0001 расчет может быть долгим, выводим прогресс
-        _, _, center_t, c_time = solve_heat_equation(dx, dt)
+        print(f"Считаю: dt={dt}, dx={dx}...", end="\r")
+        center_t, c_time = solve_heat_equation(dx, dt)
         temp_row.append(round(center_t, 2))
         time_row.append(round(c_time, 4))
     results_temp[dt] = temp_row
     results_time[dt] = time_row
+    print(f"Завершен расчет для dt={dt}              ")
 
-# --- ВЫВОД В КОНСОЛЬ ---
-print(r"Таблица результатов (dt \ dx):")
+# --- ИТОГОВЫЙ ВЫВОД В КОНСОЛЬ ---
+print("\n" + "="*50)
+print(r"ТАБЛИЦА РЕЗУЛЬТАТОВ ТЕМПЕРАТУРЫ (dt \ dx):") # Добавлена r
+print(r"dt \ dx | " + " | ".join(f"{str(x):<7}" for x in steps_vals)) # Добавлена r
+print("-" * 50)
 for dt, row in results_temp.items():
-    print(f"{dt:<7} | {' | '.join(map(str, row))}")
+    print(f"{dt:<7} | " + " | ".join(f"{str(x):<7}" for x in row))
 
-print(r"\nТаблица времени моделирования (dt \ dx):")
+print("\n" + "="*50)
+print(r"ТАБЛИЦА ВРЕМЕНИ МОДЕЛИРОВАНИЯ (dt \ dx):") # Добавлена r
+print(r"dt \ dx | " + " | ".join(f"{str(x):<7}" for x in steps_vals)) # Добавлена r
+print("-" * 50)
 for dt, row in results_time.items():
-    print(f"{dt:<7} | {' | '.join(map(str, row))}")
-
-
-# --- GUI (ИНТЕРФЕЙС) ---
-def show_gui():
-    root = Tk()
-    root.title("Прототип приложения")
-    root.geometry("700x500")
-
-    # Зеленая панель (Скрин 3)
-    top_panel = Frame(root, bg="#a3d3c3", padx=10, pady=10)
-    top_panel.pack(fill="x", padx=10, pady=10)
-
-    # Расчет для визуализации (красивый изгиб)
-    x, T, center, _ = solve_heat_equation(0.01, 0.01)
-
-    Label(top_panel, text=f"Исходные данные:\nL=1.0m\nT0=20C, BC=100C", bg="#a3d3c3", justify="left").pack(side="left")
-    Label(top_panel, text=f"Температура в центре: {center:.2f} °C\nВремя симуляции: 2.000 с", bg="#a3d3c3",
-          font=("Arial", 10, "bold")).pack(side="right")
-    Button(top_panel, text="Запуск", bg="#48cae4", width=10).pack(side="top", pady=5)
-
-    # График
-    fig, ax = plt.subplots(figsize=(5, 3))
-    ax.plot(x, T, color='red', linewidth=2)
-    ax.set_title("Распределение T(x)")
-    ax.set_xlabel("x, м")
-    ax.set_ylabel("T, °C")
-    ax.grid(True, alpha=0.3)
-
-    canvas = FigureCanvasTkAgg(fig, master=root)
-    canvas.get_tk_widget().pack(pady=10)
-
-    root.mainloop()
-
-
-if __name__ == "__main__":
-    show_gui()
+    print(f"{dt:<7} | " + " | ".join(f"{str(x):<7}" for x in row))
   ```
 </details>
 
@@ -149,5 +114,6 @@ if __name__ == "__main__":
 | **0.0001** | 0.1919 | 1.8634 | 19.0311 | 190.8414 |
 
 **Сделать вывод.**
+
 
 
