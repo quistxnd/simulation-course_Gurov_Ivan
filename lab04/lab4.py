@@ -10,7 +10,7 @@ class LCG:
 
     def random(self):
         self.state = (self.a * self.state + self.c) % self.m
-        return self.state / self.m  # нормировка к [0,1)
+        return self.state / self.m 
 
 
 def sample_mean(data):
