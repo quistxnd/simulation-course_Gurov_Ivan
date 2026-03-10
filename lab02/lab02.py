@@ -3,12 +3,12 @@ import numpy as np
 from numba import njit
 
 @njit
-def solve(dt, h, t_total=300.0):
+def solve(dt, h, t_total=100.0):
     ro = 8960.0
     c = 380.0
     lmd = 460.0
 
-    length = 0.5
+    length = 0.4
     temp_left = 0.0
     temp_right = 300.0
 
