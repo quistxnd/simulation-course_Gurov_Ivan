@@ -79,7 +79,7 @@ class ForestFireGUI:
     def get_ignition_chance(self, x, y):
         # загорится ли дерево от соседей с ветром
         wind = self.wind_from.get()
-        # окрестность мура (8 соседей)
+        # 8 соседей
         offsets = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
         for dx, dy in offsets:
