@@ -1,169 +1,284 @@
 import tkinter as tk
 import random
 
+CELL_SIZE = 12
+GRID_WIDTH = 60
+GRID_HEIGHT = 40
 
-class ForestFireApp:
+EMPTY = 0
+TREE = 1
+FIRE = 2
+ASH = 3
+
+COLORS = {
+    EMPTY: "#d9d9d9",
+    TREE: "green",
+    FIRE: "red",
+    ASH: "black",
+    "CLOUD": "#66cc66"
+}
+
+
+class ForestFire:
+
     def __init__(self, root):
+
         self.root = root
-        self.root.title("Модель лесного пожара (Клеточный автомат)")
+        self.root.title("Модель лесного пожара")
 
-        # Константы
-        self.grid_size = 50
-        self.cell_pixel = 12
+        self.grid = [[TREE if random.random() < 0.7 else EMPTY
+                      for _ in range(GRID_WIDTH)]
+                     for _ in range(GRID_HEIGHT)]
+
+        self.canvas = tk.Canvas(
+            root,
+            width=GRID_WIDTH * CELL_SIZE,
+            height=GRID_HEIGHT * CELL_SIZE
+        )
+        self.canvas.grid(row=0, column=0, rowspan=20)
+
+        control = tk.Frame(root)
+        control.grid(row=0, column=1, sticky="n")
+
+        tk.Label(control, text="Направление ветра").pack()
+
+        self.wind = tk.StringVar(value="Нет")
+
+        tk.OptionMenu(control, self.wind,
+                      "Нет", "Север", "Юг", "Восток", "Запад").pack()
+
+        tk.Label(control, text="Влажность").pack()
+
+        self.humidity = tk.Scale(control, from_=0, to=100,
+                                 orient="horizontal")
+        self.humidity.set(30)
+        self.humidity.pack()
+
+        tk.Label(control, text="Рост деревьев").pack()
+
+        self.growth = tk.Scale(control, from_=0, to=100,
+                               orient="horizontal")
+        self.growth.set(2)
+        self.growth.pack()
+
+        tk.Label(control, text="Молнии").pack()
+
+        self.lightning = tk.Scale(control, from_=0, to=100,
+                                  orient="horizontal")
+        self.lightning.set(1)
+        self.lightning.pack()
+
+        self.cloud_enabled = tk.BooleanVar()
+
+        tk.Checkbutton(control,
+                       text="Дождевое облако",
+                       variable=self.cloud_enabled).pack()
+
+        tk.Button(control, text="Случайный пожар",
+                  command=self.ignite_random).pack(pady=5)
+
+        tk.Button(control, text="Запуск",
+                  command=self.start).pack()
+
+        tk.Button(control, text="Стоп",
+                  command=self.stop).pack()
+
+        tk.Button(control, text="Сброс",
+                  command=self.reset).pack(pady=5)
+
         self.running = False
 
-        # Цветовая схема
-        self.colors = {
-            0: "#FFFFFF",  # Пусто (Белый)
-            1: "#228B22",  # Дерево (Зеленый)
-            2: "#FF4500"  # Огонь (Оранжево-красный)
-        }
+        self.cloud_x = random.randint(1, GRID_WIDTH - 2)
+        self.cloud_y = random.randint(1, GRID_HEIGHT - 2)
 
-        # Состояния: 0 - Пусто, 1 - Дерево, 2 - Огонь
-        self.grid = [[0 for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        self.draw()
+        self.create_legend(control)
 
-        # Параметры управления
-        self.wind = tk.DoubleVar(value=0.2)
-        self.humidity = tk.DoubleVar(value=0.1)
-        self.rain_chance = tk.DoubleVar(value=0.0)
+    def ignite_random(self):
 
-        self.setup_gui()
-        self.reset_forest()
+        for _ in range(5):
 
-    def setup_gui(self):
-        # Левая панель управления
-        control_panel = tk.Frame(self.root, padx=15, pady=10, width=200)
-        control_panel.pack(side=tk.LEFT, fill=tk.Y)
+            x = random.randint(0, GRID_WIDTH - 1)
+            y = random.randint(0, GRID_HEIGHT - 1)
 
-        # --- СЕКЦИЯ: ЛЕГЕНДА ---
-        tk.Label(control_panel, text="ЛЕГЕНДА", font=('Arial', 10, 'bold')).pack(pady=(0, 5))
+            if self.grid[y][x] == TREE:
+                self.grid[y][x] = FIRE
 
-        legend_frame = tk.Frame(control_panel, relief=tk.RIDGE, borderwidth=2, padx=5, pady=5)
-        legend_frame.pack(fill=tk.X, pady=(0, 20))
+    def neighbors(self, x, y):
 
-        self.create_legend_item(legend_frame, self.colors[1], "Дерево")
-        self.create_legend_item(legend_frame, self.colors[2], "ПОЖАР (горит)")
-        self.create_legend_item(legend_frame, self.colors[0], "Пусто / Пепел")
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
 
-        # --- СЕКЦИЯ: ПАРАМЕТРЫ ---
-        tk.Label(control_panel, text="НАСТРОЙКИ", font=('Arial', 10, 'bold')).pack()
+                if dx == 0 and dy == 0:
+                    continue
 
-        tk.Label(control_panel, text="Ветер (вправо):").pack(pady=(10, 0))
-        tk.Scale(control_panel, from_=0, to=1, resolution=0.1, orient=tk.HORIZONTAL, variable=self.wind).pack()
+                nx = x + dx
+                ny = y + dy
 
-        tk.Label(control_panel, text="Влажность:").pack(pady=(10, 0))
-        tk.Scale(control_panel, from_=0, to=1, resolution=0.1, orient=tk.HORIZONTAL, variable=self.humidity).pack()
+                if 0 <= nx < GRID_WIDTH and 0 <= ny < GRID_HEIGHT:
+                    yield nx, ny
 
-        tk.Label(control_panel, text="Интенсивность дождя:").pack(pady=(10, 0))
-        tk.Scale(control_panel, from_=0, to=0.5, resolution=0.05, orient=tk.HORIZONTAL,
-                 variable=self.rain_chance).pack()
+    def step(self):
 
-        # Кнопки управления
-        self.btn_start = tk.Button(control_panel, text="СТАРТ", command=self.toggle_simulation,
-                                   bg="#90EE90", font=('Arial', 10, 'bold'), height=2)
-        self.btn_start.pack(fill=tk.X, pady=(20, 5))
+        new = [row[:] for row in self.grid]
 
-        tk.Button(control_panel, text="СБРОС ЛЕСА", command=self.reset_forest).pack(fill=tk.X)
+        humidity_factor = self.humidity.get() / 100
+        growth_chance = self.growth.get() / 1000
+        lightning_chance = self.lightning.get() / 10000
 
-        # Холст для симуляции
-        self.canvas = tk.Canvas(self.root, width=self.grid_size * self.cell_pixel,
-                                height=self.grid_size * self.cell_pixel, bg="white", highlightthickness=1)
-        self.canvas.pack(side=tk.RIGHT, padx=10, pady=10)
+        wind = self.wind.get()
 
-    def create_legend_item(self, parent, color, text):
-        """Вспомогательная функция для отрисовки строки в легенде"""
-        item_frame = tk.Frame(parent)
-        item_frame.pack(fill=tk.X, pady=2)
-        canvas = tk.Canvas(item_frame, width=15, height=15, highlightthickness=1)
-        canvas.create_rectangle(0, 0, 15, 15, fill=color, outline="gray")
-        canvas.pack(side=tk.LEFT)
-        tk.Label(item_frame, text=f" — {text}", font=('Arial', 9)).pack(side=tk.LEFT)
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
 
-    def reset_forest(self):
-        self.running = False
-        self.btn_start.config(text="СТАРТ", bg="#90EE90")
-        # Изначально засаживаем лес деревьями (65%)
-        for y in range(self.grid_size):
-            for x in range(self.grid_size):
-                self.grid[y][x] = 1 if random.random() < 0.65 else 0
-        self.draw_grid()
+                cell = self.grid[y][x]
 
-    def toggle_simulation(self):
-        self.running = not self.running
-        if self.running:
-            self.btn_start.config(text="ПАУЗА", bg="#FFD700")
-            self.run_cycle()
-        else:
-            self.btn_start.config(text="СТАРТ", bg="#90EE90")
+                if cell == FIRE:
+                    new[y][x] = ASH
 
-    def run_cycle(self):
-        if not self.running:
-            return
+                elif cell == TREE:
 
+                    burning = False
 
-        new_grid = [row[:] for row in self.grid]
+                    for nx, ny in self.neighbors(x, y):
 
-        for y in range(self.grid_size):
-            for x in range(self.grid_size):
-                state = self.grid[y][x]
+                        if self.grid[ny][nx] == FIRE:
 
-                if state == 2:  # Огонь
-                    new_grid[y][x] = 0  # Превращается в пустоту (пепел)
+                            prob = 0.6 * (1 - humidity_factor)
 
-                elif state == 1:  # Дерево
-                    on_fire = False
-                    # Проверка соседей (Окрестность фон Неймана)
-                    for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                        ny, nx = y + dy, x + dx
-                        if 0 <= ny < self.grid_size and 0 <= nx < self.grid_size:
-                            if self.grid[ny][nx] == 2:
-                                # Вероятность возгорания
-                                chance = 0.7 - self.humidity.get()
-                                # Модификатор ветра (увеличивает шанс переноса вправо)
-                                if dx == 1:
-                                    # Базовая вероятность
-                                    chance = 0.7 - self.humidity.get()
+                            if wind == "Восток" and nx < x:
+                                prob *= 0.5
+                            if wind == "Запад" and nx > x:
+                                prob *= 0.5
+                            if wind == "Север" and ny > y:
+                                prob *= 0.5
+                            if wind == "Юг" and ny < y:
+                                prob *= 0.5
 
-                                    # Ветер усиливает распространение во всех направлениях
-                                    chance *= (1 + self.wind.get())
+                            if random.random() < prob:
+                                burning = True
+                                break
 
-                                    # Ограничиваем диапазон 0–1
-                                    chance = max(0.0, min(1.0, chance))
+                    if burning:
+                        new[y][x] = FIRE
 
-                                if random.random() < chance:
-                                    on_fire = True
-                                    break
+                    elif random.random() < lightning_chance:
+                        new[y][x] = FIRE
 
-                    # Случайный удар молнии (очень редкий шанс)
-                    if not on_fire and random.random() < 0.0001:
-                        on_fire = True
+                elif cell == EMPTY:
 
-                    if on_fire:
-                        # Эффект дождя (спасает дерево от огня)
-                        if random.random() < self.rain_chance.get():
-                            new_grid[y][x] = 0  # Потушено (но дерево исчезло)
-                        else:
-                            new_grid[y][x] = 2  # Загорелось
+                    if random.random() < growth_chance:
+                        new[y][x] = TREE
 
+        self.grid = new
 
+        if self.cloud_enabled.get():
+            self.move_cloud()
 
-        self.grid = new_grid
-        self.draw_grid()
-        # Скорость обновления (100 мс = 10 кадров в секунду)
-        self.root.after(100, self.run_cycle)
+    def move_cloud(self):
 
-    def draw_grid(self):
+        self.cloud_x += random.choice([-1, 0, 1])
+        self.cloud_y += random.choice([-1, 0, 1])
+
+        self.cloud_x = max(1, min(GRID_WIDTH - 2, self.cloud_x))
+        self.cloud_y = max(1, min(GRID_HEIGHT - 2, self.cloud_y))
+
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+
+                x = self.cloud_x + dx
+                y = self.cloud_y + dy
+
+                if self.grid[y][x] == FIRE:
+                    self.grid[y][x] = TREE
+
+    def draw(self):
+
         self.canvas.delete("all")
-        for y in range(self.grid_size):
-            for x in range(self.grid_size):
-                val = self.grid[y][x]
-                if val != 0:  # Отрисовываем только деревья и огонь
-                    x1, y1 = x * self.cell_pixel, y * self.cell_pixel
-                    x2, y2 = x1 + self.cell_pixel, y1 + self.cell_pixel
-                    self.canvas.create_rectangle(x1, y1, x2, y2, fill=self.colors[val], outline="")
+
+        for y in range(GRID_HEIGHT):
+            for x in range(GRID_WIDTH):
+
+                color = COLORS[self.grid[y][x]]
+
+                self.canvas.create_rectangle(
+                    x * CELL_SIZE,
+                    y * CELL_SIZE,
+                    (x + 1) * CELL_SIZE,
+                    (y + 1) * CELL_SIZE,
+                    fill=color,
+                    outline=""
+                )
+
+        if self.cloud_enabled.get():
+
+            for dx in range(-1, 2):
+                for dy in range(-1, 2):
+
+                    x = self.cloud_x + dx
+                    y = self.cloud_y + dy
+
+                    self.canvas.create_rectangle(
+                        x * CELL_SIZE,
+                        y * CELL_SIZE,
+                        (x + 1) * CELL_SIZE,
+                        (y + 1) * CELL_SIZE,
+                        fill=COLORS["CLOUD"],
+                        outline=""
+                    )
+
+    def update(self):
+
+        if self.running:
+            self.step()
+            self.draw()
+            self.root.after(120, self.update)
+
+    def start(self):
+        self.running = True
+        self.update()
+
+    def stop(self):
+        self.running = False
+
+    def reset(self):
+
+        self.running = False
+
+        self.grid = [[TREE if random.random() < 0.7 else EMPTY
+                      for _ in range(GRID_WIDTH)]
+                     for _ in range(GRID_HEIGHT)]
+
+        self.cloud_x = random.randint(1, GRID_WIDTH - 2)
+        self.cloud_y = random.randint(1, GRID_HEIGHT - 2)
+
+        self.draw()
+
+    def create_legend(self, frame):
+
+        legend = tk.LabelFrame(frame, text="Легенда")
+        legend.pack(pady=10)
+
+        items = [
+            ("Дерево", COLORS[TREE]),
+            ("Огонь", COLORS[FIRE]),
+            ("Пепел", COLORS[ASH]),
+            ("Пусто", COLORS[EMPTY]),
+            ("Облако", COLORS["CLOUD"])
+        ]
+
+        for name, color in items:
+
+            row = tk.Frame(legend)
+            row.pack(anchor="w")
+
+            box = tk.Canvas(row, width=20, height=20)
+            box.create_rectangle(0, 0, 20, 20, fill=color)
+            box.pack(side="left")
+
+            tk.Label(row, text=name).pack(side="left")
 
 
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ForestFireApp(root)
-    root.mainloop()
+root = tk.Tk()
+app = ForestFire(root)
+root.mainloop()
