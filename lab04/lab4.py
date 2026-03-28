@@ -1,6 +1,5 @@
 class LCG:
     def __init__(self, seed=42):
-        # Параметры из Numerical Recipes
         self.a = 1664525
         self.c = 1013904223
         self.m = 2**32
