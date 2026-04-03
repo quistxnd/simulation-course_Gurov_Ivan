@@ -20,7 +20,7 @@ notebook.add(frame_yes_no, text="Да / Нет")
 
 
 def say_yes_no():
-    result = random.choice(["ДА", "НЕТ"])
+    result = random.choices(["ДА", "НЕТ"], weights=[0.7, 0.3], k=1)[0]
     label_result_yes_no.config(text=result)
 
 
