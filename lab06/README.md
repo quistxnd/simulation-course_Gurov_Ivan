@@ -44,9 +44,9 @@ $$z_1 = \sqrt{-2 \ln u_1} \sin(2\pi u_2)$$
 ## 4. Графический интерфейс пользователя
 Интерфейс выполнен в современной темной теме (Material Dark) с использованием библиотеки `customtkinter`. Для визуализации данных используется интеграция `matplotlib` в окно приложения.
 
-![Рисунок 1 - Дискретные величины]<img width="1152" height="782" alt="изображение" src="https://github.com/user-attachments/assets/cece5695-16c9-4127-8fad-f7a3eb3665ce" />
+Рисунок 1 - Дискретные величины<img width="1152" height="782" alt="изображение" src="https://github.com/user-attachments/assets/cece5695-16c9-4127-8fad-f7a3eb3665ce" />
 
-![Рисунок 2 - Нормальное распределение]<img width="1152" height="782" alt="изображение" src="https://github.com/user-attachments/assets/73a9f98c-ecaa-4f0a-8bfd-a4be64075a33" />
+Рисунок 2 - Нормальное распределение<img width="1152" height="782" alt="изображение" src="https://github.com/user-attachments/assets/73a9f98c-ecaa-4f0a-8bfd-a4be64075a33" />
 
 
 ---
