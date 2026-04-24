@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.stats import chi2, norm
 
-# Настройка стиля
+
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
 
-# Цветовая палитра (Material Dark)
+# Цветовая палитра
 BG_COLOR = "#121212"
 PANEL_BG = "#1E1E1E"
 ACCENT_PURPLE = "#BB86FC"
@@ -18,12 +18,11 @@ TEXT_MUTED = "#888888"
 
 
 class HorizontalStatCard(ctk.CTkFrame):
-    """Карточка для горизонтального размещения под графиком"""
+    # Карточка для горизонтального размещения под графиком
 
     def __init__(self, master, title, accent_color):
         super().__init__(master, fg_color=PANEL_BG, corner_radius=10, border_width=1, border_color="#333333")
 
-        # Цветная полоска сверху (акцент)
         top_line = ctk.CTkFrame(self, height=4, fg_color=accent_color, corner_radius=10)
         top_line.pack(fill="x", padx=10, pady=(10, 0))
 
@@ -50,7 +49,7 @@ class HorizontalStatCard(ctk.CTkFrame):
             else:
                 self.status_lbl.configure(text="ВЫСОКАЯ ПОГРЕШНОСТЬ", text_color="#CF6679")
 
-
+# Класс приложения и инициалищации
 class SimulationApp(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -67,11 +66,9 @@ class SimulationApp(ctk.CTk):
         self.init_discrete_tab()
         self.init_normal_tab()
 
-    # ==========================================
-    #             ВКЛАДКА 1: ДИСКРЕТНАЯ
-    # ==========================================
+    
+    # Интерфейс Дискретная
     def init_discrete_tab(self):
-        # --- ЛЕВАЯ ПАНЕЛЬ (Управление) ---
         left_panel = ctk.CTkFrame(self.tab_discrete, width=300, fg_color=BG_COLOR, corner_radius=10)
         left_panel.pack(side="left", fill="y", padx=10, pady=10)
 
@@ -108,11 +105,11 @@ class SimulationApp(ctk.CTk):
                       font=("Arial", 14, "bold"), command=self.run_discrete).pack(fill="x", side="bottom", padx=15,
                                                                                   pady=15)
 
-        # --- ПРАВАЯ ПАНЕЛЬ (График и Карточки) ---
+      
         right_panel = ctk.CTkFrame(self.tab_discrete, fg_color="transparent")
         right_panel.pack(side="right", fill="both", expand=True, padx=10, pady=10)
 
-        # Графическая область (СВЕРХУ)
+     
         plot_container = ctk.CTkFrame(right_panel, fg_color=BG_COLOR, corner_radius=10)
         plot_container.pack(side="top", fill="both", expand=True, pady=(0, 10))
 
@@ -125,7 +122,7 @@ class SimulationApp(ctk.CTk):
         self.canvas_disc = FigureCanvasTkAgg(self.fig_disc, master=plot_container)
         self.canvas_disc.get_tk_widget().pack(fill="both", expand=True, padx=5, pady=5)
 
-        # Карточки показателей (СНИЗУ В РЯД)
+        
         cards_container = ctk.CTkFrame(right_panel, fg_color="transparent", height=120)
         cards_container.pack(side="bottom", fill="x")
 
@@ -138,6 +135,8 @@ class SimulationApp(ctk.CTk):
         self.card_d_disc = HorizontalStatCard(cards_container, "Погрешность (D)", ACCENT_TEAL)
         self.card_d_disc.pack(side="left", fill="x", expand=True, padx=(5, 0))
 
+    # Управление строками таблиц
+    
     def add_table_row(self, x_val, p_val):
         row_frame = ctk.CTkFrame(self.table_frame, fg_color="transparent")
         row_frame.pack(fill="x", pady=2)
@@ -156,7 +155,8 @@ class SimulationApp(ctk.CTk):
         if len(self.table_rows) > 1:
             row = self.table_rows.pop()
             row['frame'].destroy()
-
+    # Логика дискретного распределения 
+    # Считывание значений из таблицы
     def run_discrete(self):
         try:
             x_th = [float(row['x'].get().replace(',', '.')) for row in self.table_rows]
@@ -168,7 +168,7 @@ class SimulationApp(ctk.CTk):
                 self.error_lbl_disc.configure(text=f"Сумма P = {p_sum:.4f} (нужно 1.0)")
                 return
             self.error_lbl_disc.configure(text="")
-
+            # Сравнение числа с накопленной вероятностью
             samples = []
             cdf = np.cumsum(p_th)
             for _ in range(N):
@@ -177,16 +177,16 @@ class SimulationApp(ctk.CTk):
                     if u <= c:
                         samples.append(x_th[i])
                         break
-
+            # Вычисления эмпирических параметров и теоретических
             m_th = sum(x * p for x, p in zip(x_th, p_th))
             d_th = sum((x ** 2) * p for x, p in zip(x_th, p_th)) - m_th ** 2
-
             m_emp = np.mean(samples)
             d_emp = np.var(samples)
 
             err_m = abs(m_th - m_emp) / abs(m_th) if m_th != 0 else abs(m_emp)
             err_d = abs(d_th - d_emp) / d_th if d_th != 0 else abs(d_emp)
 
+            # Хи-квадрат
             unique, counts = np.unique(samples, return_counts=True)
             freq_map = dict(zip(unique, counts))
             chi_val = 0
@@ -212,9 +212,10 @@ class SimulationApp(ctk.CTk):
         except ValueError:
             self.error_lbl_disc.configure(text="Ошибка: проверьте ввод")
 
-    # ==========================================
-    #             ВКЛАДКА 2: НОРМАЛЬНАЯ
-    # ==========================================
+   
+    #  Интерфейс Нормальная
+
+    
     def init_normal_tab(self):
         left_panel = ctk.CTkFrame(self.tab_normal, width=300, fg_color=BG_COLOR, corner_radius=10)
         left_panel.pack(side="left", fill="y", padx=10, pady=10)
@@ -269,6 +270,8 @@ class SimulationApp(ctk.CTk):
         self.card_d_norm = HorizontalStatCard(cards_container, "Погрешность (D)", ACCENT_PURPLE)
         self.card_d_norm.pack(side="left", fill="x", expand=True, padx=(5, 0))
 
+    # Метод Бокса-Мюллера
+        
     def run_normal(self):
         try:
             self.error_lbl_norm.configure(text="")
@@ -287,7 +290,7 @@ class SimulationApp(ctk.CTk):
 
             err_m = abs(0 - m_emp)
             err_d = abs(1 - d_emp) / 1.0
-
+    # Хи-квадрат 
             observed_freq, bin_edges = np.histogram(samples, bins=K)
             chi_val = 0
             for i in range(K):
