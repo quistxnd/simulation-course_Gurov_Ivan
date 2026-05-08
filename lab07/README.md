@@ -65,7 +65,7 @@ $$
 Интерфейс реализован с использованием встроенной библиотеки `Tkinter` (с применением современных стилей `ttk`). Это обеспечивает легковесность приложения и кроссплатформенную совместимость.
 
 
-<img width="1302" height="832" alt="изображение" src="https://github.com/user-attachments/assets/27e1a9cd-b8cf-4bba-a0bc-b43a678e20af" />)
+<img width="1302" height="832" alt="изображение" src="https://github.com/user-attachments/assets/27e1a9cd-b8cf-4bba-a0bc-b43a678e20af" />
 
 ---
 
