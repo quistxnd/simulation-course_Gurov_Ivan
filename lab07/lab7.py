@@ -15,12 +15,12 @@ class WeatherSimulationModel(tk.Tk):
         self.title("Моделирование погоды (Марковские цепи)")
         self.geometry("1300x800")
 
-        # Применяем более современный стандартный стиль
+        
         style = ttk.Style(self)
         if "clam" in style.theme_names():
             style.theme_use("clam")
 
-        # Системные переменные
+        
         self.is_simulating = False
         self.time_step = 0
         self.state_sequence = []
@@ -41,18 +41,15 @@ class WeatherSimulationModel(tk.Tk):
             writer.writerow(["День", "Код_Состояния", "Описание"])
 
     def build_interface(self):
-        # Основные фреймы (Графики слева, Настройки справа)
         self.plot_frame = ttk.Frame(self)
         self.plot_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.control_frame = ttk.Frame(self, width=300)
         self.control_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=10, pady=10)
 
-        # --- Блок управления ---
         lbl_title = ttk.Label(self.control_frame, text="Панель управления", font=("Helvetica", 16, "bold"))
         lbl_title.pack(pady=(0, 20))
 
-        # Матрица
         matrix_group = ttk.LabelFrame(self.control_frame, text="Матрица вероятностей переходов")
         matrix_group.pack(fill=tk.X, pady=10, ipadx=5, ipady=5)
 
@@ -100,7 +97,7 @@ class WeatherSimulationModel(tk.Tk):
                                      foreground="gray")
         self.lbl_weather.pack(pady=5)
 
-        # --- Блок графиков ---
+        # Блок графиков 
         self.figure = plt.Figure(figsize=(8, 7), dpi=100)
         self.figure.subplots_adjust(hspace=0.4)
 
@@ -134,7 +131,7 @@ class WeatherSimulationModel(tk.Tk):
         try:
             return np.linalg.solve(matrix_eq, rhs)
         except np.linalg.LinAlgError:
-            return np.array([1 / 3, 1 / 3, 1 / 3])  # Fallback если матрица вырождена
+            return np.array([1 / 3, 1 / 3, 1 / 3])  
 
     def switch_simulation(self):
         if self.is_simulating:
@@ -156,11 +153,9 @@ class WeatherSimulationModel(tk.Tk):
             self.time_step += 1
             self.state_sequence.append(self.current_idx)
 
-            # Обновление UI
             self.lbl_day.config(text=f"День: {self.time_step}")
             self.lbl_weather.config(text=self.state_names[self.current_idx])
 
-            # Смена цвета текста в зависимости от погоды
             colors = ["#f39c12", "#7f8c8d", "#2c3e50"]
             self.lbl_weather.config(foreground=colors[self.current_idx])
 
@@ -179,11 +174,10 @@ class WeatherSimulationModel(tk.Tk):
             time.sleep(self.delay_var.get())
 
     def refresh_plots(self, theo_probs):
-        # 1. График истории (ступенчатый)
+        # График истории (ступенчатый)
         self.ax_history.clear()
         self.ax_history.set_title("Динамика изменения погоды (последние 50 дней)", fontsize=12)
 
-        # ИСПРАВЛЕННЫЙ БЛОК КОДА:
         if not self.state_sequence:
             display_data = [0]  # Значение по умолчанию для Y
             x_data = [0]  # Значение по умолчанию для X
@@ -196,7 +190,7 @@ class WeatherSimulationModel(tk.Tk):
         self.ax_history.set_yticklabels(["Ясно", "Облачно", "Пасмурно"])
         self.ax_history.grid(True, linestyle='--', alpha=0.6)
 
-        # 2. Гистограмма распределений
+        # Гистограмма распределений
         self.ax_dist.clear()
         self.ax_dist.set_title(f"Сравнение вероятностей (Выборка: {self.time_step} дн.)", fontsize=12)
 
