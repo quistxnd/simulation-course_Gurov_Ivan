@@ -87,7 +87,7 @@ class MM1LossEngine:
 class QueuingLabWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Моделирование СМО M/M/1/1 (система с отказами)")
+        self.setWindowTitle("Моделирование СМО M/M/1")
         self.resize(1100, 700)
         self.setStyleSheet(STYLE_SHEET)
 
